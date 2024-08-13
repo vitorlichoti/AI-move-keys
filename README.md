@@ -24,20 +24,22 @@ Este projeto utiliza inteligência artificial para detectar movimentos corporais
    git clone https://github.com/seu-usuario/snake-ai-body-motion-sense.git
    cd snake-ai-body-motion-sense
 
-  Instale as Dependências:
+2. **Instale as Dependências**:
 Este projeto utiliza apenas bibliotecas carregadas via CDN, então não há dependências para instalar.
 
-Inicie o Projeto:
+3. **Inicie o Projeto**:
 Basta abrir o arquivo index.html no seu navegador preferido. O jogo iniciará, e você poderá controlar a cobra com seus movimentos corporais.
 
-Estrutura do Projeto
+## Estrutura do Projeto
 index.html: Estrutura principal do jogo.
 styles.css: Estilos CSS aplicados ao jogo.
 script.js: Lógica do jogo Snake e integração com a IA.
 model.json e metadata.json: Arquivos do modelo de detecção de poses.
-Como Jogar
+
+## Como Jogar
 Acesse o Jogo: Abra o arquivo index.html em seu navegador.
 Posicione-se na Frente da Webcam: A webcam capturará seus movimentos.
 Controle a Cobra: Movimente seu corpo para cima, baixo, esquerda ou direita para controlar a direção da cobra.
-Contribuição
+
+## Contribuição
 Sinta-se à vontade para contribuir com este projeto! Para sugestões, problemas ou melhorias, abra uma issue ou envie um pull request.
