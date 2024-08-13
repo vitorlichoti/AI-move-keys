@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Snake</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header id="header">
+      <div>
+        <h1 id="title">Snake - AI Body Motion Sense</h1>
+        <button id="start-button" type="button" onclick="init()">Snake it !</button>
+      </div>
+      <div><canvas id="canvas"></canvas></div>
+      <div id="label-container"></div>
+    </header>
+    <div id="gameBoard"></div>
+    <script src="script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/pose@0.8/dist/teachablemachine-pose.min.js"></script>
+    <script type="text/javascript">
+      //movimentos
+  const setaCima = new KeyboardEvent('keydown', {
+      key: 'ArrowUp',
+      code: 'ArrowUp',
+      keyCode: 38, // Código da tecla para navegadores antigos
+      bubbles: true,
+      cancelable: true
+  });
+  
+  const setaBaixo = new KeyboardEvent('keydown', {
+    key: 'ArrowDown',
+    code: 'ArrowDown',
+    keyCode: 40, // Código da tecla para navegadores antigos
+    bubbles: true,
+    cancelable: true
+  });
+  
+  const setaEsquerda = new KeyboardEvent('keydown', {
+    key: 'ArrowLeft',
+    code: 'ArrowLeft',
+    keyCode: 37, // Código da tecla para navegadores antigos
+    bubbles: true,
+    cancelable: true
+  });
+
+  const setaDireita = new KeyboardEvent('keydown', {
+    key: 'ArrowRight',
+    code: 'ArrowRight',
+    keyCode: 39, // Código da tecla para navegadores antigos
+    bubbles: true,
+    cancelable: true
+  });
+
+const gameBoard = document.getElementById('gameBoard');
+const boardSize = 20;
+const boardPixelSize = 400 / boardSize;
+
+let snake = [
+    { x: 10, y: 10 }
+];
+let direction = { x: 0, y: 0 };
+let food = { x: Math.floor(Math.random() * boardSize), y: Math.floor(Math.random() * boardSize) };
+let score = 0;
+
+function createElement(className, x, y) {
+    const element = document.createElement('div');
+    element.classList.add(className);
+    element.style.left = `${x * boardPixelSize}px`;
+    element.style.top = `${y * boardPixelSize}px`;
+    return element;
+}
+
+function draw() {
+    gameBoard.innerHTML = '';
+    snake.forEach(segment => gameBoard.appendChild(createElement('snake', segment.x, segment.y)));
+    gameBoard.appendChild(createElement('food', food.x, food.y));
+}
+
+function moveSnake() {
+    const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+
+    // Implementação do efeito de "wrap-around"
+    head.x = (head.x + boardSize) % boardSize;
+    head.y = (head.y + boardSize) % boardSize;
+
+    // Verifica colisão com o próprio corpo
+    if (isCollision(head)) {
+        alert(`Game Over! Score: ${score}`);
+        resetGame();
+        return;
+    }
+
+    snake.unshift(head);
+
+    if (head.x === food.x && head.y === food.y) {
+        placeFood();
+        score++;
+    } else {
+        snake.pop();
+    }
+}
+
+function isCollision(head) {
+    // Verifica colisão com o próprio corpo
+    for (let i = 1; i < snake.length; i++) {
+        if (snake[i].x === head.x && snake[i].y === head.y) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function placeFood() {
+    let newFoodPosition;
+    while (true) {
+        newFoodPosition = { x: Math.floor(Math.random() * boardSize), y: Math.floor(Math.random() * boardSize) };
+        if (!snake.some(segment => segment.x === newFoodPosition.x && segment.y === newFoodPosition.y)) {
+            break;
+        }
+    }
+    food = newFoodPosition;
+}
+
+function resetGame() {
+    snake = [{ x: 10, y: 10 }];
+    direction = { x: 0, y: 0 };
+    score = 0;
+    placeFood();
+}
+
+function gameLoop() {
+    moveSnake();
+    draw();
+}
+
+function handleKey(event) {
+    switch (event.key) {
+        case 'ArrowUp':
+            if (direction.y === 0) direction = { x: 0, y: -1 };
+            break;
+        case 'ArrowDown':
+            if (direction.y === 0) direction = { x: 0, y: 1 };
+            break;
+        case 'ArrowLeft':
+            if (direction.x === 0) direction = { x: -1, y: 0 };
+            break;
+        case 'ArrowRight':
+            if (direction.x === 0) direction = { x: 1, y: 0 };
+            break;
+    }
+}
+
+document.addEventListener('keydown', handleKey);
+setInterval(gameLoop, 200);
+    // More API functions here:
+    // https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/pose
+
+    // the link to your model provided by Teachable Machine export panel
+    let model, webcam, ctx, labelContainer, maxPredictions;
+
+    async function init() {
+        const modelURL = "model.json";
+        const metadataURL = "metadata.json";
+
+        // load the model and metadata
+        // Refer to tmImage.loadFromFiles() in the API to support files from a file picker
+        // Note: the pose library adds a tmPose object to your window (window.tmPose)
+        model = await tmPose.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+
+        // Convenience function to setup a webcam
+        const size = 300;
+        const flip = true; // whether to flip the webcam
+        webcam = new tmPose.Webcam(size, size, flip); // width, height, flip
+        await webcam.setup(); // request access to the webcam
+        await webcam.play();
+        window.requestAnimationFrame(loop);
+
+        // append/get elements to the DOM
+        const canvas = document.getElementById("canvas");
+        canvas.width = size; canvas.height = size;
+        ctx = canvas.getContext("2d");
+        labelContainer = document.getElementById("label-container");
+        for (let i = 0; i < maxPredictions; i++) { // and class labels
+            labelContainer.appendChild(document.createElement("div"));
+        }
+    }
+
+    async function loop(timestamp) {
+        webcam.update(); // update the webcam frame
+        await predict();
+        window.requestAnimationFrame(loop);
+    }
+
+    async function predict() {
+        // Prediction #1: run input through posenet
+        // estimatePose can take in an image, video or canvas html element
+        const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
+        // Prediction 2: run input through teachable machine classification model
+        const prediction = await model.predict(posenetOutput);
+        
+
+        for (let i = 0; i < maxPredictions; i++) {
+            const classPrediction =
+                prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+            labelContainer.childNodes[i].innerHTML = classPrediction;
+        }
+
+        if (prediction[0].probability.toFixed(2) > 0.9) {
+          document.dispatchEvent(setaDireita);
+        }
+        if (prediction[1].probability.toFixed(2) > 0.9) {
+          document.dispatchEvent(setaEsquerda);
+        }
+        
+        if (prediction[3].probability.toFixed(2) > 0.9) {
+          document.dispatchEvent(setaBaixo);
+        }
+        if (prediction[4].probability.toFixed(2) > 0.9) {
+          document.dispatchEvent(setaCima);
+        }
+        // finally draw the poses
+        drawPose(pose);
+    }
+
+    function drawPose(pose) {
+        if (webcam.canvas) {
+            ctx.drawImage(webcam.canvas, 0, 0);
+            // draw the keypoints and skeleton
+            if (pose) {
+                const minPartConfidence = 0.5;
+                tmPose.drawKeypoints(pose.keypoints, minPartConfidence, ctx);
+                tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctx);
+            }
+        }
+    }
+    </script>
+</body>
+</html>
